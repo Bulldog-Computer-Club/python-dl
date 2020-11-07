@@ -11,14 +11,14 @@ def docs():
         for line in f.readlines():
             print(line)
         
-        quit()
+        sys.exit()
 
 def main(argv):
     init()
     if len(argv) <= 1:
         docs()
     
-    if argv[1] == "-h" or argv == "--help":
+    if argv[1] == "-h" or argv[1] == "--help":
         docs()
         
     url = argv[1]
