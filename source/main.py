@@ -10,7 +10,7 @@ def docs():
         for line in f.readlines():
             print(line)
         
-        quit()
+        sys.exit()
 
 def main(argv):
     if len(argv) <= 1:
