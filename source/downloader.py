@@ -1,36 +1,46 @@
 from pytube import YouTube
 import logger
 import curses
+import sys
+
+#TODO move these back into the downloader class
+selected_stream = None
+stdscr = curses.initscr()
+size = 0
+
 
 class downloader:
-    def progress_bar(self,stream, chunk,file_handle, bytes_remaining):
-        size = self.video.filesize
-        i = 0
-        while i <= 100:
-            progress = i
 
     def __init__(self, options):
-        self.stdscr = curses.initscr()
-
         curses.start_color()
-        log = logger.logger()
+        self.log = logger.logger()
         try:
-            self.video = YouTube(options["url"], on_complete_callback=self.progress_bar)
+            self.video = YouTube(options["url"], on_progress_callback=self.progress)
         except:
-            log.error("error fetching self.video", self.stdscr)
+            self.log.error("error fetching video", stdscr)
+            stdscr.addstr("\npress any key to dismiss: ")
+            stdscr.getch()
+
             curses.endwin()
-            quit()
+            sys.exit()
         
-        log.info("successfully fetched self.video", self.stdscr)
+        self.log.info("successfully fetched video", stdscr)
 
         if options["mode"] == None:
             options["mode"] = "mp4"
 
-        log.info('downloading "' + self.video.title + '"', self.stdscr)
-        self.video.streams.order_by('resolution').filter(progressive=True, file_extension=options["mode"]).last().download(filename=options["output_name"] if options["output_name"] != None else self.video.title)
-        
-        log.bar(self.stdscr.getyx()[0], 50, 100, self.stdscr)
+        self.log.info('downloading "' + self.video.title + '"', stdscr)
+        self.selected_stream = self.video.streams.order_by('resolution').filter(progressive=True, file_extension=options["mode"]).last()
+        self.size = self.selected_stream.filesize
+        self.log.info("downloading " + str(self.size) + " bytes from " + self.video.vid_info_url, stdscr)
+        self.selected_stream.download(filename=options["output_name"] if options["output_name"] != None else self.video.title)
 
-        self.stdscr.addstr("\npress any key to dismiss: ")
-        self.stdscr.getch()
+        self.log.info("done!", stdscr)
+        stdscr.addstr("\npress any key to dismiss: ")
+        stdscr.getch()
         curses.endwin()
+
+    def progress(self, chunk, file_handle, bytes_remaining):
+        size = self.selected_stream.filesize
+        progress = (float(abs(bytes_remaining-size)/size))*float(100)
+        self.log.bar(stdscr.getyx()[0], progress, 100, stdscr)
